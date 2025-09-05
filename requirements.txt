@@ -1,0 +1,18 @@
+# Core dependencies
+streamlit>=1.33.0
+pandas>=2.2.2
+openpyxl>=3.1.2
+
+# Optional enhancements (safe to include now or later)
+fpdf2>=2.7.8              # For PDF export
+streamlit-authenticator>=0.2.3  # For login/authentication
+python-dotenv>=1.0.1      # For managing secrets securely
+plotly>=5.20.0            # For interactive charts
+streamlit-aggrid>=0.3.4   # For editable data tables
+xlsxwriter>=3.2.0         # For styled Excel exports
+deep-translator>=1.11.4   # For multilingual support
+
+# Dev tools (optional but recommended)
+black>=24.3.0             # Code formatting
+ruff>=0.3.5               # Linting
+pytest>=8.2.1             # Unit testing

@@ -1,0 +1,37 @@
+# Python virtual environments
+venv/
+.env/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# VS Code settings
+.vscode/
+
+# Streamlit cache and config
+.streamlit/
+
+# Excel files (uploaded or generated)
+*.xlsx
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Jupyter notebooks (if used)
+*.ipynb
+.ipynb_checkpoints/
+
+# Exported reports
+*.csv
+*.pdf
+
+# Dependency lock files (optional)
+poetry.lock
+Pipfile.lock
