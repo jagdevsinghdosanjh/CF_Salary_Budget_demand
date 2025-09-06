@@ -16,3 +16,4 @@ deep-translator>=1.11.4   # For multilingual support
 black>=24.3.0             # Code formatting
 ruff>=0.3.5               # Linting
 pytest>=8.2.1             # Unit testing
+fpdf2>=2.7.8              # For PDF export

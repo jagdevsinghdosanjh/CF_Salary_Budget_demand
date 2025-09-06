@@ -1,6 +1,8 @@
 from .utils import calculate_incremented_salary
 
 def generate_salary_slips(df):
+    from .utils import calculate_incremented_salary
+
     df["Incremented Basic"] = df.apply(
         lambda row: calculate_incremented_salary(row["Date of Joining in the ICT"], row["Basic Salary"]), axis=1
     )
@@ -14,10 +16,22 @@ def generate_salary_slips(df):
 
     df["Total Salary"] = df["Incremented Basic"] + df[valid_allowances].sum(axis=1)
 
-    slip_cols = [
+    ordered_cols = [
         "Name of CF", "Name of School", "Bank Account No, (State Bank Of India only)",
         "Date of Joining in the ICT", "Basic Salary", "Incremented Basic"
     ] + valid_allowances + ["Total Salary"]
 
-    slips_df = df[slip_cols].copy()
+    slips_df = df[ordered_cols].copy()
+
+    # Rename for clarity
+    slips_df.rename(columns={
+        "Name of CF": "Faculty Name",
+        "Name of School": "School",
+        "Bank Account No, (State Bank Of India only)": "SBI Account No",
+        "Date of Joining in the ICT": "Joining Date",
+        "Basic Salary": "Basic",
+        "Incremented Basic": "Incremented Basic",
+        "Total Salary": "Total"
+    }, inplace=True)
+
     return slips_df
