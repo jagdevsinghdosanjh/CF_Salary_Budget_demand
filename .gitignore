@@ -14,7 +14,7 @@ __pycache__/
 .streamlit/
 
 # Excel files (uploaded or generated)
-*.xls
+*.xlsx
 
 # Logs and temporary files
 *.log
