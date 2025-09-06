@@ -39,9 +39,13 @@ def generate_pdf(cf_data, available_components, computed_total):
 
     pdf.set_font("DejaVu", size=12)
     for comp in available_components:
-        amount = cf_data.get(comp, "₹0.00")
+        amount = cf_data.get(comp, 0)
+        try:
+            amount = float(amount)
+        except (ValueError, TypeError):
+            amount = 0.0
         pdf.cell(100, 10, txt=comp, border=1)
-        pdf.cell(100, 10, txt=f"₹{float(amount):,.2f}", border=1, ln=True)
+        pdf.cell(100, 10, txt=f"₹{amount:,.2f}", border=1, ln=True)
 
     # Total Salary
     pdf.set_font("DejaVu", 'B', 12)
@@ -87,10 +91,17 @@ if uploaded_file:
             "CCA", "Border Allowance", "Handicap Allowance", "Medical Allowance", "Mobile Allowance"
         ]
         available_components = get_available_salary_components(cf_slip, expected_components)
-        computed_total = compute_total_salary(cf_data, available_components)
+        computed_total = compute_total_salary(cf_data, expected_components)
 
         if available_components:
             salary_table = cf_slip[available_components].T.rename(columns={cf_slip.index[0]: "Amount"})
+
+            # Highlight missing mandatory fields
+            mandatory_fields = ["Basic", "DA @ 181%"]
+            missing_fields = [field for field in mandatory_fields if field not in available_components]
+            for field in missing_fields:
+                salary_table.loc[field] = "⚠️ Missing"
+
             salary_table.loc["Total Salary"] = f"₹{computed_total:,.2f}"
             st.table(salary_table)
         else:

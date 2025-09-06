@@ -1,83 +1,80 @@
 import streamlit as st
 import pandas as pd
 from fpdf import FPDF
+
 from modules.data_loader import load_cf_data as ld
 from modules.salary_calculator import compute_school_budgets
-from modules.utils import get_available_salary_components, compute_total_salary
+from modules.utils import get_available_salary_components
 
-# 🔁 Constants
-COLUMN_SCHOOL_NAME = "Name of School"
-COLUMN_CF_NAME = "Name of CF"
-
+# -------------------------------
 # 📄 PDF Generator
-def generate_pdf(cf_data, available_components, computed_total):
+# -------------------------------
+def generate_pdf(cf_data, available_components):
     pdf = FPDF()
     pdf.add_page()
-
-    # Register Unicode font
-    pdf.add_font("DejaVu", "", "assets/fonts/DejaVuSans.ttf", uni=True)
-    pdf.add_font("DejaVu", "B", "assets/fonts/DejaVuSans-Bold.ttf", uni=True)
-    pdf.set_font("DejaVu", size=12)
+    pdf.set_font("Arial", size=12)
 
     # Title
-    pdf.set_font("DejaVu", 'B', 14)
+    pdf.set_font("Arial", 'B', 14)
     pdf.cell(200, 10, txt="Salary Slip", ln=True, align='C')
     pdf.ln(10)
 
     # Faculty Info
-    pdf.set_font("DejaVu", size=12)
-    pdf.cell(200, 10, txt=f"Computer Faculty: {cf_data[COLUMN_CF_NAME]}", ln=True)
-    pdf.cell(200, 10, txt=f"School: {cf_data[COLUMN_SCHOOL_NAME]}", ln=True)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"Computer Faculty: {cf_data['Name of CF']}", ln=True)
+    pdf.cell(200, 10, txt=f"School: {cf_data['Name of School']}", ln=True)
     pdf.cell(200, 10, txt=f"Date of Joining: {cf_data['Date of Joining in the ICT']}", ln=True)
     pdf.cell(200, 10, txt=f"Bank Account No: {cf_data['Bank Account No, (State Bank Of India only)']}", ln=True)
     pdf.ln(10)
 
     # Salary Components
-    pdf.set_font("DejaVu", 'B', 12)
+    pdf.set_font("Arial", 'B', 12)
     pdf.cell(100, 10, txt="Component", border=1)
     pdf.cell(100, 10, txt="Amount", border=1, ln=True)
 
-    pdf.set_font("DejaVu", size=12)
+    pdf.set_font("Arial", size=12)
     for comp in available_components:
         amount = cf_data.get(comp, "₹0.00")
         pdf.cell(100, 10, txt=comp, border=1)
-        pdf.cell(100, 10, txt=f"₹{float(amount):,.2f}", border=1, ln=True)
+        pdf.cell(100, 10, txt=str(amount), border=1, ln=True)
 
     # Total Salary
-    pdf.set_font("DejaVu", 'B', 12)
+    pdf.set_font("Arial", 'B', 12)
     pdf.cell(100, 10, txt="Total Salary", border=1)
-    pdf.cell(100, 10, txt=f"₹{computed_total:,.2f}", border=1, ln=True)
+    pdf.cell(100, 10, txt=str(cf_data.get("Total Salary", "₹0.00")), border=1, ln=True)
 
     return bytes(pdf.output(dest='S'))
 
+# -------------------------------
 # 📊 Streamlit App
+# -------------------------------
 st.set_page_config(page_title="CF Salary Budget Demand", layout="wide")
 st.title("📊 Computer Faculty Salary Budget Demand Generator")
 
 uploaded_file = st.file_uploader("Upload CF Salary Excel File", type=["xlsx"])
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-    df.columns = df.columns.str.strip()
+    df.columns = df.columns.str.strip()  # Normalize column names
 
     # Sidebar Filters
     st.sidebar.header("🏫 Monthly Budget Demand by Name of School")
-    Schools = sorted(df[COLUMN_SCHOOL_NAME].dropna().unique())
+    Schools = sorted(df["Name of School"].dropna().unique())
     School = st.sidebar.selectbox("Select Name of School to View CFs", Schools)
 
     st.sidebar.header("👨‍🏫 CF-Wise Monthly Budget Breakdown")
-    cf_names = sorted(df[df[COLUMN_SCHOOL_NAME] == School][COLUMN_CF_NAME].dropna().unique())
+    cf_names = sorted(df[df["Name of School"] == School]["Name of CF"].dropna().unique())
     selected_cf = st.sidebar.selectbox("Select CF to View Salary Slip", cf_names)
 
     # Salary Slip View
     st.subheader("📄 Complete Salary Slips for All CFs")
-    cf_slip = df[(df[COLUMN_SCHOOL_NAME] == School) & (df[COLUMN_CF_NAME] == selected_cf)]
+    cf_slip = df[(df["Name of School"] == School) & (df["Name of CF"] == selected_cf)]
 
     if not cf_slip.empty:
         cf_data = cf_slip.iloc[0]
 
         st.markdown(f"""
-        **Name of CF:** {cf_data[COLUMN_CF_NAME]}  
-        **Name of School:** {cf_data[COLUMN_SCHOOL_NAME]}  
+        **Name of CF:** {cf_data['Name of CF']}  
+        **Name of School:** {cf_data['Name of School']}  
         **Date of Joining in the ICT:** {cf_data['Date of Joining in the ICT']}  
         **Bank Account No, (State Bank Of India only):** {cf_data['Bank Account No, (State Bank Of India only)']}
         """)
@@ -87,21 +84,18 @@ if uploaded_file:
             "CCA", "Border Allowance", "Handicap Allowance", "Medical Allowance", "Mobile Allowance"
         ]
         available_components = get_available_salary_components(cf_slip, expected_components)
-        computed_total = compute_total_salary(cf_data, available_components)
 
         if available_components:
-            salary_table = cf_slip[available_components].T.rename(columns={cf_slip.index[0]: "Amount"})
-            salary_table.loc["Total Salary"] = f"₹{computed_total:,.2f}"
-            st.table(salary_table)
+            st.table(cf_slip[available_components].T.rename(columns={cf_slip.index[0]: "Amount"}))
         else:
             st.warning("No salary components found for this CF.")
 
         # PDF Download
-        pdf_bytes = generate_pdf(cf_data, available_components, computed_total)
+        pdf_bytes = generate_pdf(cf_data, available_components)
         st.download_button(
             label="📥 Download Salary Slip PDF",
             data=pdf_bytes,
-            file_name=f"{cf_data[COLUMN_CF_NAME].replace(' ', '_')}_Salary_Slip.pdf",
+            file_name=f"{cf_data['Name of CF'].replace(' ', '_')}_Salary_Slip.pdf",
             mime="application/pdf"
         )
     else:

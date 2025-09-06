@@ -16,18 +16,3 @@ def get_available_salary_components(df, expected_cols):
     Returns a list of salary component columns that exist in the DataFrame.
     """
     return [col for col in expected_cols if col in df.columns]
-
-# modules/utils.py
-
-def compute_total_salary(cf_row, components):
-    mandatory = ["Basic", "DA @ 181%"]
-    all_components = list(set(components + mandatory))
-
-    total = 0.0
-    for comp in all_components:
-        try:
-            value = float(cf_row.get(comp, 0))
-            total += value
-        except (ValueError, TypeError):
-            continue
-    return total
